@@ -9,7 +9,146 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          gpt_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          gpt_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          gpt_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_gpt_id_fkey"
+            columns: ["gpt_id"]
+            isOneToOne: false
+            referencedRelation: "custom_gpts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_history: {
+        Row: {
+          created_at: string
+          gpt_id: string
+          id: string
+          is_user_message: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gpt_id: string
+          id?: string
+          is_user_message: boolean
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gpt_id?: string
+          id?: string
+          is_user_message?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_gpt_id_fkey"
+            columns: ["gpt_id"]
+            isOneToOne: false
+            referencedRelation: "custom_gpts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_gpts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_gpts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

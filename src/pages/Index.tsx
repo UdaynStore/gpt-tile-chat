@@ -1,13 +1,103 @@
-import { Hero } from "@/components/Hero";
-import { Features } from "@/components/Features";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
+import { GPTCard } from "@/components/GPTCard";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+interface CustomGPT {
+  id: string;
+  name: string;
+  description: string | null;
+  message_count?: number;
+}
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [gpts, setGpts] = useState<CustomGPT[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+      fetchGPTs();
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const fetchGPTs = async () => {
+    try {
+      const { data: gptsData, error: gptsError } = await supabase
+        .from("custom_gpts")
+        .select(`
+          id,
+          name,
+          description,
+          chat_history:chat_history(count)
+        `);
+
+      if (gptsError) throw gptsError;
+
+      const formattedGPTs = gptsData.map(gpt => ({
+        ...gpt,
+        message_count: (gpt.chat_history as any)?.[0]?.count || 0
+      }));
+
+      setGpts(formattedGPTs);
+    } catch (error) {
+      console.error("Error fetching GPTs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <Hero />
-      <Features />
+      <main className="container mx-auto px-4 py-8 mt-16">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold">Your Custom GPTs</h1>
+          <Button onClick={() => navigate("/create")} size="lg">
+            <Plus className="mr-2" />
+            Create New GPT
+          </Button>
+        </div>
+        
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+            ))}
+          </div>
+        ) : gpts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {gpts.map((gpt) => (
+              <GPTCard
+                key={gpt.id}
+                id={gpt.id}
+                name={gpt.name}
+                description={gpt.description}
+                messageCount={gpt.message_count || 0}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <h3 className="text-2xl font-semibold mb-2">No Custom GPTs yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first Custom GPT to get started</p>
+            <Button onClick={() => navigate("/create")} size="lg">
+              <Plus className="mr-2" />
+              Create Your First GPT
+            </Button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
