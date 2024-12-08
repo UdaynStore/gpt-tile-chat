@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Chat from "./pages/Chat";
+import APIKeys from "./pages/APIKeys";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/chat/:gptId" element={<Chat />} />
+          <Route path="/api-keys/:gptId" element={<APIKeys />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
