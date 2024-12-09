@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { MessageSquare, Send } from "lucide-react";
+import { ChatMessage } from "@/components/chat/ChatMessage";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatHistory } from "@/components/chat/ChatHistory";
 
 interface Message {
   content: string;
@@ -21,21 +20,23 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const isTemporary = gptId === "temp";
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/login");
-        return;
-      }
-      setUserId(session.user.id);
-      fetchGPTDetails();
-      fetchChatHistory();
-    };
-
-    checkAuth();
-  }, [gptId, navigate]);
+    if (!isTemporary) {
+      const checkAuth = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate("/login");
+          return;
+        }
+        setUserId(session.user.id);
+        fetchGPTDetails();
+        fetchChatHistory();
+      };
+      checkAuth();
+    }
+  }, [gptId, navigate, isTemporary]);
 
   const fetchGPTDetails = async () => {
     try {
@@ -58,6 +59,8 @@ const Chat = () => {
   };
 
   const fetchChatHistory = async () => {
+    if (isTemporary) return;
+    
     try {
       const { data, error } = await supabase
         .from("chat_history")
@@ -81,7 +84,11 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !userId) return;
+    if (!input.trim()) return;
+    if (!isTemporary && !userId) {
+      toast.error("Please log in to send messages");
+      return;
+    }
 
     setLoading(true);
     const userMessage = {
@@ -91,19 +98,25 @@ const Chat = () => {
     };
 
     try {
-      // Save user message to chat history
-      await supabase.from("chat_history").insert({
-        gpt_id: gptId,
-        message: input,
-        is_user_message: true,
-        user_id: userId
-      });
+      if (!isTemporary) {
+        await supabase.from("chat_history").insert({
+          gpt_id: gptId,
+          message: input,
+          is_user_message: true,
+          user_id: userId
+        });
+      }
 
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
 
+      // Get API configuration
+      const apiConfig = isTemporary 
+        ? JSON.parse(sessionStorage.getItem("tempGPTConfig") || "{}") 
+        : { chatflowId: gptId, apiUrl: import.meta.env.VITE_FLOWISE_API_HOST };
+
       // Send message to API
-      const response = await fetch(`${import.meta.env.VITE_FLOWISE_API_HOST}/api/v1/prediction/${gptId}`, {
+      const response = await fetch(`${apiConfig.apiUrl}/api/v1/prediction/${apiConfig.chatflowId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,13 +128,14 @@ const Chat = () => {
 
       const data = await response.json();
       
-      // Save bot response to chat history
-      await supabase.from("chat_history").insert({
-        gpt_id: gptId,
-        message: data.text || "Sorry, I couldn't process that.",
-        is_user_message: false,
-        user_id: userId
-      });
+      if (!isTemporary) {
+        await supabase.from("chat_history").insert({
+          gpt_id: gptId,
+          message: data.text || "Sorry, I couldn't process that.",
+          is_user_message: false,
+          user_id: userId
+        });
+      }
 
       const botMessage = {
         content: data.text || "Sorry, I couldn't process that.",
@@ -140,74 +154,23 @@ const Chat = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Chat History Sidebar */}
-      <div className="w-64 border-r bg-muted/50">
-        <div className="p-4 font-semibold">Chat History</div>
-        <Separator />
-        <ScrollArea className="h-[calc(100vh-5rem)]">
-          <div className="p-4 space-y-4">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-2 rounded-lg text-sm ${
-                  msg.isUser ? "bg-primary/10" : "bg-muted"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="font-medium">
-                    {msg.isUser ? "You" : "Assistant"}
-                  </span>
-                </div>
-                <p className="line-clamp-2">{msg.content}</p>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Chat Interface */}
+      {!isTemporary && <ChatHistory messages={messages} />}
+      
       <div className="flex-1 flex flex-col">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    msg.isUser
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {msg.content}
-                </div>
-              </div>
+              <ChatMessage key={idx} content={msg.content} isUser={msg.isUser} />
             ))}
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              sendMessage();
-            }}
-            className="flex gap-2"
-          >
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              disabled={loading}
-            />
-            <Button type="submit" disabled={loading || !input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          onSend={sendMessage}
+          loading={loading}
+        />
       </div>
     </div>
   );

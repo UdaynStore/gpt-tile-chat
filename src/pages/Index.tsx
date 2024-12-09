@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { GPTCard } from "@/components/GPTCard";
+import { TemporaryGPT } from "@/components/TemporaryGPT";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -87,6 +88,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TemporaryGPT />
             {gpts.map((gpt) => (
               <GPTCard
                 key={gpt.id}
