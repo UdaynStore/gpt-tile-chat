@@ -13,6 +13,13 @@ interface CustomGPT {
   message_count?: number;
 }
 
+const DEFAULT_GPT: CustomGPT = {
+  id: "711a5e7c-88f3-420c-84b3-c12ea0981241",
+  name: "Default Assistant",
+  description: "A helpful AI assistant ready to chat with you",
+  message_count: 0
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [gpts, setGpts] = useState<CustomGPT[]>([]);
@@ -49,9 +56,12 @@ const Index = () => {
         message_count: (gpt.chat_history as any)?.[0]?.count || 0
       }));
 
-      setGpts(formattedGPTs);
+      // Add default GPT if no custom GPTs exist
+      setGpts(formattedGPTs.length === 0 ? [DEFAULT_GPT] : formattedGPTs);
     } catch (error) {
       console.error("Error fetching GPTs:", error);
+      // Show default GPT if there's an error
+      setGpts([DEFAULT_GPT]);
     } finally {
       setLoading(false);
     }
@@ -75,7 +85,7 @@ const Index = () => {
               <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
-        ) : gpts.length > 0 ? (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {gpts.map((gpt) => (
               <GPTCard
@@ -86,15 +96,6 @@ const Index = () => {
                 messageCount={gpt.message_count || 0}
               />
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2">No Custom GPTs yet</h3>
-            <p className="text-muted-foreground mb-6">Create your first Custom GPT to get started</p>
-            <Button onClick={() => navigate("/create")} size="lg">
-              <Plus className="mr-2" />
-              Create Your First GPT
-            </Button>
           </div>
         )}
       </main>
