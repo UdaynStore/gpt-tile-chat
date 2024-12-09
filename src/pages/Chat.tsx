@@ -46,16 +46,6 @@ const Chat = () => {
       <FullPageChat
         chatflowid={gptId || ""}
         apiHost={import.meta.env.VITE_FLOWISE_API_HOST || "http://localhost:3000"}
-        theme={{
-          button: {
-            backgroundColor: "hsl(var(--primary))",
-            color: "hsl(var(--primary-foreground))"
-          },
-          chatWindow: {
-            backgroundColor: "hsl(var(--background))",
-            color: "hsl(var(--foreground))"
-          }
-        }}
       />
     </div>
   );
