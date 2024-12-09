@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Key } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface GPTCardProps {
@@ -23,20 +23,12 @@ export function GPTCard({ id, name, description, messageCount }: GPTCardProps) {
             <MessageSquare className="h-4 w-4" />
             <span>{messageCount} messages</span>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to={`/api-keys/${id}`}>
-                <Key className="h-4 w-4 mr-2" />
-                API Keys
-              </Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to={`/chat/${id}`}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Chat
-              </Link>
-            </Button>
-          </div>
+          <Button size="sm" asChild>
+            <Link to={`/chat/${id}`}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Chat
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
