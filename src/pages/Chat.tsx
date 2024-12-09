@@ -20,6 +20,7 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,6 +29,7 @@ const Chat = () => {
         navigate("/login");
         return;
       }
+      setUserId(session.user.id);
       fetchGPTDetails();
       fetchChatHistory();
     };
@@ -79,7 +81,7 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !userId) return;
 
     setLoading(true);
     const userMessage = {
@@ -94,6 +96,7 @@ const Chat = () => {
         gpt_id: gptId,
         message: input,
         is_user_message: true,
+        user_id: userId
       });
 
       setMessages((prev) => [...prev, userMessage]);
@@ -117,6 +120,7 @@ const Chat = () => {
         gpt_id: gptId,
         message: data.text || "Sorry, I couldn't process that.",
         is_user_message: false,
+        user_id: userId
       });
 
       const botMessage = {
